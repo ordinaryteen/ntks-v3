@@ -53,18 +53,18 @@ class PaymentService:
       return response_message.content
 
 
-async def execute_payment_logic(self, args: dict):
-  room_name   = args.get("room_name")
-  tenant_name = args.get("tenant_name")
-  amount      = args.get("amount")
+  async def execute_payment_logic(self, args: dict):
+    room_name   = args.get("room_name")
+    tenant_name = args.get("tenant_name")
+    amount      = args.get("amount")
 
-  room = await self.repo.get_room_by_name(room_name)
-  if not room:
-    return f"Error: Kamar {room_name} tidak ditemukan."
+    room = await self.repo.get_room_by_name(room_name)
+    if not room:
+      return f"Error: Kamar {room_name} tidak ditemukan."
 
-  tenant = await self.repo.get_tenant_by_name_and_room(tenant_name, room.id)
-  if not tenant:
-    return f"Error: Tidak ada penghuni bernama '{tenant_name}' di kamar {room_name}."
+    tenant = await self.repo.get_tenant_by_name_and_room(tenant_name, room.id)
+    if not tenant:
+      return f"Error: Tidak ada penghuni bernama '{tenant_name}' di kamar {room_name}."
 
-  tx = await self.repo.create_transaction(tenant.id, amount)
-  return f"Sukses: Pembayaran {tenant.name} ({room.room_name}) sebesar {tx.amount} telah dicatat ke DB."
+    tx = await self.repo.create_transaction(tenant.id, amount)
+    return f"Sukses: Pembayaran {tenant.name} ({room.room_name}) sebesar {tx.amount} telah dicatat ke DB."
