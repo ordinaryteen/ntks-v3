@@ -9,4 +9,4 @@ class User(Base):
   phone_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(100), nullable=True)
 
-  rooms: Mapped[list["Rooms"]] = relationship("Room", back_populates="owner")
+  rooms: Mapped[list["Room"]] = relationship("Room", back_populates="owner")

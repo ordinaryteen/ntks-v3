@@ -13,8 +13,10 @@ class PaymentService:
     )
 
   async def process_chat(self, user_text: str, user_name: str = "Nafi"):
+    print(f"DEBUG: User Chat -> {user_text}")
+
     messages = [
-        {"role": "system", "content": f"Lo adalah asisten Natakos. Bos lo namanya {user_name}. Gaya bahasa: Santai, panggil 'Juragan'. Tugas lo: Mengelola pembayaran kos."},
+        {"role": "system", "content": f"Lo adalah asisten Natakos. Bos lo namanya {user_name}. Gaya bahasa: Santai, panggil 'Juragan'. Tugas lo: Mengelola pembayaran kos. Tugas lo: Mengelola pembayaran kos. Kalau user ngasih perintah bayar, pake tool record_payment. Kalau user cuma nanya atau ngobrol, jawab aja pake gaya bahasa santai Juragan."},
         {"role": "user", "content": user_text}
     ]
 
@@ -27,6 +29,8 @@ class PaymentService:
 
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
+
+    print(f"DEBUG: LLM Response -> {response_message}")
 
     if tool_calls:
       messages.append(response_message)
@@ -47,10 +51,10 @@ class PaymentService:
           model="deepseek-chat",
           messages=messages
         )
-        return final_response.choices[0].message.content
+        return final_response.choices[0].message.content or "Udah beres Gan, pembayarannya udah masuk di sistem."
 
       # if there is no tools called
-      return response_message.content
+      return response_message.content or "Maaf Gan, ada yang salah pas gw proses. Bisa diulang?"
 
 
   async def execute_payment_logic(self, args: dict):
@@ -66,5 +70,13 @@ class PaymentService:
     if not tenant:
       return f"Error: Tidak ada penghuni bernama '{tenant_name}' di kamar {room_name}."
 
-    tx = await self.repo.create_transaction(tenant.id, amount)
-    return f"Sukses: Pembayaran {tenant.name} ({room.room_name}) sebesar {tx.amount} telah dicatat ke DB."
+    tx = await self.repo.create_transaction(tenant.id, args["amount"])
+    
+    try:
+        await self.repo.session.commit()
+        print(f"DEBUG: Data Berhasil di-COMMIT ke Postgres!")
+    except Exception as e:
+        await self.repo.session.rollback()
+        return f"Error: Gagal nyimpen ke database bray. {str(e)}"
+
+    return f"Sukses: Pembayaran {tenant.name} ({room.room_name}) sebesar {tx.amount:,} dicatat."
