@@ -1,45 +1,74 @@
 Brochoco it aint that DDD 🥀
 
 ```
-src/
-├── api/
-│   └── v1/
-│       └── assistant/            # Endpoint buat chat/interaksi sama Agent
-│           ├── router.py
-│           └── schemas.py
-│
-├── modules/
-│   ├── identity/                 # Contoh Modul Bisnis (Tetap murni)
-│   │   ├── domain/ ...
-│   │   ├── application/
-│   │   │   ├── agents/           # <--- NEW: Agent spesifik buat fitur Identity
-│   │   │   │   ├── identity_agent.py # Logic agent (pake BaseAgent)
-│   │   │   │   └── tools.py      # Definisi tools (Function calling)
-│   │   │   └── use_cases/ ...
-│   │   └── infrastructure/
-│   │       ├── persistence/ ...
-│   │       └── ai_tools/         # <--- NEW: Implementasi nyata dari tools.py
-│   │           └── identity_lookup_tool.py # (Misal: Agent cari user via DB)
+your-fav-backend/
+├── src/
+│   ├── api/                        # LAYER: INTERFACES (Gatekeepers)
+│   │   ├── v1/
+│   │   │   ├── identity/           # Endpoint User/Auth
+│   │   │   │   ├── router.py
+│   │   │   │   └── schemas.py      # Pydantic DTOs
+│   │   │   ├── assistant/          # Endpoint Chat Utama Agent
+│   │   │   │   ├── router.py
+│   │   │   │   └── schemas.py
+│   │   │   └── knowledge/          # Endpoint buat upload dokumen (RAG)
+│   │   │       ├── router.py
+│   │   │       └── schemas.py
+│   │   └── dependencies.py         # Global DI (Auth, DB Session)
 │   │
-│   └── support_agent/            # Modul Khusus Agent (Orchestrator)
-│       ├── application/
-│       │   └── coordinator.py    # Ngatur kapan pake IdentityAgent vs SalesAgent
-│       └── domain/
-│           └── prompts/          # System Prompts & Templates (Pure String/Logic)
-│               ├── base_prompts.py
-│               └── persona_templates.py
+│   ├── modules/                    # LAYER: THE HEART (Feature-First)
+│   │   ├── identity/               # -- Fitur: User Management --
+│   │   │   ├── domain/             # Pure Logic (Entities, Repo Interface)
+│   │   │   ├── application/
+│   │   │   │   ├── use_cases/      # RegisterUser, LoginUser
+│   │   │   │   ├── agents/         # AI as "Power User"
+│   │   │   │   │   ├── identity_agent.py
+│   │   │   │   │   └── tools.py    # List tools (get_user_profile, etc)
+│   │   │   └── infrastructure/
+│   │   │       ├── persistence/    # SQLAlchemy Models & Repos
+│   │   │       └── ai_tools/       # Impl: Tool panggil Repo
+│   │   │
+│   │   ├── assistant/              # -- Fitur: AI Orchestration --
+│   │   │   ├── domain/
+│   │   │   │   ├── prompts/        # Persona & System Prompt Templates
+│   │   │   │   │   ├── agent_persona.py
+│   │   │   │   │   └── tool_instructions.py
+│   │   │   ├── application/
+│   │   │   │   └── chat_manager.py # Ngatur alur chat & memory strategy
+│   │   │   └── infrastructure/     
+│   │   │       └── memory_store.py # Implementasi simpen chat ke Redis
+│   │   │
+│   │   └── knowledge/              # -- Fitur: RAG & Documents --
+│   │       ├── domain/
+│   │       │   └── entities.py     # Document Entity
+│   │       ├── application/
+│   │       │   └── ingest_doc.py   # Use Case: File -> Embedding -> VectorStore
+│   │       └── infrastructure/
+│   │           └── vector_repo.py  # Impl: Panggil core/ai/vector_store.py
+│   │
+│   ├── core/                       # LAYER: SHARED ENGINE (Cross-Cutting)
+│   │   ├── ai/                     # -- AI AGENCY BASE ENGINE --
+│   │   │   ├── base_agent.py       # Class utama yang di-extend semua agent
+│   │   │   ├── llm_client.py       # Wrapper OpenAI/Claude (Singleton)
+│   │   │   ├── vector_store.py     # Wrapper PGVector/Pinecone (RAG)
+│   │   │   └── memory/             # -- MEMORY & SUMMARIZATION --
+│   │   │       ├── base.py
+│   │   │       ├── strategies.py   # (The "Compact" logic is here!)
+│   │   │       └── window.py       # Slidding window memory
+│   │   ├── database.py             # SQLAlchemy Engine setup
+│   │   ├── config.py               # Env vars (API_KEYS, DB_URL)
+│   │   └── exceptions.py           # Global Error Handling
+│   │
+│   ├── main.py                     # App Entry Point
+│   └── alembic/                    # DB Migrations
 │
-├── core/                         # SHARED AI CORE (The Engine)
-│   ├── ai/                       
-│   │   ├── base_agent.py         # Abstract class buat semua agent
-│   │   ├── llm_client.py         # Wrapper OpenAI/Anthropic/Local LLM
-│   │   ├── memory/               # Shared Memory (Redis/Postgres)
-│   │   └── vector_store.py       # Integrasi Pinecone/ChromaDB/PGVector
-│   ├── config.py
-│   └── database.py
-│
-├── main.py
-└── tests/
+├── tests/                          # Mirrored Test Suite
+│   ├── unit/
+│   ├── integration/
+│   └── agents/                     # Khusus ngetes akurasi tool-calling
+├── .env
+├── pyproject.toml
+└── README.md
 ```
 
 ### 📋 Checklist Integrasi WhatsApp (Meta Cloud API)
