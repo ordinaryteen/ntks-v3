@@ -1,23 +1,45 @@
 Brochoco it aint that DDD 🥀
 
 ```
-app/
-├── domain/                # THE HEART (Pure Python, No SQL, No FastAPI)
-│   ├── identity/          # Sub-Domain
-│   │   ├── entities.py    # Class User biasa (bukan SQLAlchemy model!)
-│   │   ├── value_objects.py # Email, Phone (Logika validasi di level object)
-│   │   ├── repository_interface.py # Cuma 'kontrak' (Abstract Base Class)
-│   │   └── exceptions.py  # Domain-specific errors
-├── infrastructure/        # THE TOOLS (Implementation Details)
-│   ├── database/
-│   │   ├── sqlalchemy_models.py # Di sini baru ada SQLAlchemy (Base)
-│   │   └── repositories.py # Implementasi nyata query SQL
-│   └── external_api/      # Misal: Client buat kirim SMS/WhatsApp
-├── application/           # THE ORCHESTRATOR (Use Cases)
-│   ├── identity/
-│   │   └── register_user.py # Alur kerja: Panggil Repo -> Simpan -> Kirim Notif
-└── interfaces/            # THE GATEKEEPERS (Entry Points)
-    └── api/               # FastAPI Routers ada di sini
+src/
+├── api/
+│   └── v1/
+│       └── assistant/            # Endpoint buat chat/interaksi sama Agent
+│           ├── router.py
+│           └── schemas.py
+│
+├── modules/
+│   ├── identity/                 # Contoh Modul Bisnis (Tetap murni)
+│   │   ├── domain/ ...
+│   │   ├── application/
+│   │   │   ├── agents/           # <--- NEW: Agent spesifik buat fitur Identity
+│   │   │   │   ├── identity_agent.py # Logic agent (pake BaseAgent)
+│   │   │   │   └── tools.py      # Definisi tools (Function calling)
+│   │   │   └── use_cases/ ...
+│   │   └── infrastructure/
+│   │       ├── persistence/ ...
+│   │       └── ai_tools/         # <--- NEW: Implementasi nyata dari tools.py
+│   │           └── identity_lookup_tool.py # (Misal: Agent cari user via DB)
+│   │
+│   └── support_agent/            # Modul Khusus Agent (Orchestrator)
+│       ├── application/
+│       │   └── coordinator.py    # Ngatur kapan pake IdentityAgent vs SalesAgent
+│       └── domain/
+│           └── prompts/          # System Prompts & Templates (Pure String/Logic)
+│               ├── base_prompts.py
+│               └── persona_templates.py
+│
+├── core/                         # SHARED AI CORE (The Engine)
+│   ├── ai/                       
+│   │   ├── base_agent.py         # Abstract class buat semua agent
+│   │   ├── llm_client.py         # Wrapper OpenAI/Anthropic/Local LLM
+│   │   ├── memory/               # Shared Memory (Redis/Postgres)
+│   │   └── vector_store.py       # Integrasi Pinecone/ChromaDB/PGVector
+│   ├── config.py
+│   └── database.py
+│
+├── main.py
+└── tests/
 ```
 
 ### 📋 Checklist Integrasi WhatsApp (Meta Cloud API)
